@@ -210,10 +210,13 @@
   }
 
   function addMouseEvents ( event ) {
-    if ( event.target === getActiveVideo() ) {
+    if ( event.target !== getActiveVideo() ) return;
+
+    if ( event.button === 1 ) {
       event.preventDefault();
       togglePlayPause();
     }
+
   }
 
   function keyboardEvent ( e ) {
