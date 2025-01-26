@@ -142,12 +142,19 @@
       const duration = video.duration;
       const currentTime = video.currentTime;
 
+      const videoTrack = video.captureStream().getVideoTracks()[ 0 ];
+      const settings = videoTrack.getSettings();
+      const frameRate = settings.frameRate.toFixed( 2 );
+      const spanFrameRate = document.querySelector( `#frame-rate-display` );
+      spanFrameRate.textContent = frameRate;
+
       const spanRemainingTime = document.querySelector( '#spanRemainingTime' );
       const spanCurrentTime = document.querySelector( '#spanCurrentTime' );
       const spanActualRemTime = document.querySelector( `#spanActualRemainingTime` );
 
       fadeIn( spanRemainingTime );
       fadeIn( spanCurrentTime );
+
 
       const remainingTime = Math.round( duration - currentTime );
       const readable = forHumans( remainingTime );
