@@ -9,8 +9,9 @@ const htmlStructure = `
     </div>
     
     <div class="controlRow">
-      <input type="number" title="Speed" step="0.1" class="numinp" id="speedDisp">
+      <input type="number" title="Speed" step="0.1" min="0.1" max="4" class="numinp" id="speedDisp" value="1">
       <input type="number" title="Volume" step="0.001" class="numinp" id="volDisp">
+      <input type="range" class="slidSpeedFin important vidContRange" min="0.1" max="4" step="0.1" value="1">
       <button id="muteButton" for="volDisp">🔊</button>
       <input type="checkbox" title="Auto Switch" id="cbAutoSwitch">
     </div>

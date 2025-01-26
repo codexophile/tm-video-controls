@@ -12,7 +12,7 @@
   new MutationObserver( main ).observe( document.body, { childList: true, subtree: true } );
   document.addEventListener( 'scroll', main );
   document.addEventListener( "keyup", keyboardEvent, false );
-  document.addEventListener( 'mousedown', addMouseEvents, false );
+  document.addEventListener( 'mousedown', addMouseEvents );
 
   async function main () {
 
