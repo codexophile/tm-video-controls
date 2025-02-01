@@ -144,9 +144,17 @@
 
       const videoTrack = video.captureStream().getVideoTracks()[ 0 ];
       const settings = videoTrack.getSettings();
-      const frameRate = settings.frameRate.toFixed( 2 );
+      const frameRate = Math.round( settings.frameRate );
       const spanFrameRate = document.querySelector( `#frame-rate-display` );
       spanFrameRate.textContent = frameRate;
+      spanFrameRate.style.backgroundColor = frameRate >= 60
+        ? '#ff8080'
+        : '#2ecc71';
+
+      const spanVidHeight = document.querySelector( `.divHeight` );
+      spanVidHeight.style.backgroundColor = video.videoHeight >= 1080
+        ? '#ff8080'
+        : '#2ecc71';
 
       const spanRemainingTime = document.querySelector( '#spanRemainingTime' );
       const spanCurrentTime = document.querySelector( '#spanCurrentTime' );
@@ -154,7 +162,6 @@
 
       fadeIn( spanRemainingTime );
       fadeIn( spanCurrentTime );
-
 
       const remainingTime = Math.round( duration - currentTime );
       const readable = forHumans( remainingTime );
