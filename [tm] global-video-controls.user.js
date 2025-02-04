@@ -144,7 +144,7 @@
 
       const videoTrack = video.captureStream().getVideoTracks()[ 0 ];
       const settings = videoTrack.getSettings();
-      const frameRate = Math.round( settings.frameRate );
+      const frameRate = Math.round( settings.frameRate / video.playbackRate );
       const spanFrameRate = document.querySelector( `#frame-rate-display` );
       spanFrameRate.textContent = frameRate;
       spanFrameRate.style.backgroundColor = frameRate >= 60
