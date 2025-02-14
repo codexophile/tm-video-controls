@@ -142,19 +142,12 @@
       const duration = video.duration;
       const currentTime = video.currentTime;
 
-      const videoTrack = video.captureStream().getVideoTracks()[ 0 ];
-      const settings = videoTrack.getSettings();
-      const frameRate = Math.round( settings.frameRate / video.playbackRate );
-      const spanFrameRate = document.querySelector( `#frame-rate-display` );
-      spanFrameRate.textContent = frameRate;
-      spanFrameRate.style.backgroundColor = frameRate >= 60
-        ? '#ff8080'
-        : '#2ecc71';
-
       const spanVidHeight = document.querySelector( `.divHeight` );
       spanVidHeight.style.backgroundColor = video.videoHeight >= 1080
         ? '#ff8080'
         : '#2ecc71';
+
+      updateFrameRate( video );
 
       const spanRemainingTime = document.querySelector( '#spanRemainingTime' );
       const spanCurrentTime = document.querySelector( '#spanCurrentTime' );
@@ -313,6 +306,17 @@
       activeVideo.currentTime -= timeIncrTiny;
     if ( direction === 'right' )
       activeVideo.currentTime += timeIncrTiny;
+  }
+
+  function updateFrameRate ( videoEl ) {
+    const videoTrack = videoEl.captureStream().getVideoTracks()[ 0 ];
+    const settings = videoTrack.getSettings();
+    const frameRate = Math.round( settings.frameRate / videoEl.playbackRate );
+    const spanFrameRate = document.querySelector( `#frame-rate-display` );
+    spanFrameRate.textContent = frameRate;
+    spanFrameRate.style.backgroundColor = frameRate >= 60
+      ? '#ff8080'
+      : '#2ecc71';
   }
 
 } )();
