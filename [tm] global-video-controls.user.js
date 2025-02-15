@@ -9,8 +9,8 @@
 
   let controlPanel, vidProgressEl, speedDispEl, volDispEl, slidVolFinEl, divHeightEl;
 
-  new MutationObserver( main ).observe( document.body, { childList: true, subtree: true } );
-  document.addEventListener( 'scroll', main );
+  new MutationObserver( debounce( main, 150 ) ).observe( document.body, { childList: true, subtree: true } );
+  document.addEventListener( 'scroll', debounce( main, 150 ) );
   document.addEventListener( "keyup", keyboardEvent, false );
   document.addEventListener( 'mousedown', addMouseEvents );
 
