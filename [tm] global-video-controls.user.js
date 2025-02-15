@@ -133,7 +133,11 @@
     video.addEventListener( 'stalled', () => { titler( "[media stalled]" ); } );
 
 
+    let lastUpdate = 0;
     video.addEventListener( 'timeupdate', ( event ) => {
+      const now = Date.now();
+      if ( now - lastUpdate < 50 ) return; // Only update every 50ms
+      lastUpdate = now;
 
       if ( activeVideo != event.target ) return; // 🛑
 
