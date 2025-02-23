@@ -312,14 +312,16 @@
       activeVideo.currentTime += timeIncrTiny;
   }
 
-  const frameRateCache = new WeakMap();
+  const frameRateCache = new Map();
 
   function updateFrameRate ( videoEl ) {
-    if ( !videoEl ) return;
+    if ( !videoEl || !videoEl.src ) return;
 
-    // Check if the frame rate is already cached
-    if ( frameRateCache.has( videoEl ) ) {
-      const cachedFrameRate = frameRateCache.get( videoEl );
+    const videoUrl = videoEl.src;
+
+    // Check if the frame rate is already cached for this URL
+    if ( frameRateCache.has( videoUrl ) ) {
+      const cachedFrameRate = frameRateCache.get( videoUrl );
       displayFrameRate( cachedFrameRate );
       return;
     }
@@ -331,8 +333,8 @@
     const settings = videoTrack.getSettings();
     const frameRate = Math.round( settings.frameRate / videoEl.playbackRate );
 
-    // Store in cache
-    frameRateCache.set( videoEl, frameRate );
+    // Store in cache using URL as key
+    frameRateCache.set( videoUrl, frameRate );
 
     // Display frame rate
     displayFrameRate( frameRate );
