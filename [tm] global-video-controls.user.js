@@ -312,15 +312,38 @@
       activeVideo.currentTime += timeIncrTiny;
   }
 
+  const frameRateCache = new WeakMap();
+
   function updateFrameRate ( videoEl ) {
+    if ( !videoEl ) return;
+
+    // Check if the frame rate is already cached
+    if ( frameRateCache.has( videoEl ) ) {
+      const cachedFrameRate = frameRateCache.get( videoEl );
+      displayFrameRate( cachedFrameRate );
+      return;
+    }
+
+    // Capture video track settings
     const videoTrack = videoEl.captureStream().getVideoTracks()[ 0 ];
+    if ( !videoTrack ) return;
+
     const settings = videoTrack.getSettings();
     const frameRate = Math.round( settings.frameRate / videoEl.playbackRate );
+
+    // Store in cache
+    frameRateCache.set( videoEl, frameRate );
+
+    // Display frame rate
+    displayFrameRate( frameRate );
+  }
+
+  function displayFrameRate ( frameRate ) {
     const spanFrameRate = document.querySelector( `#frame-rate-display` );
-    spanFrameRate.textContent = frameRate;
-    spanFrameRate.style.backgroundColor = frameRate >= 60
-      ? '#ff8080'
-      : '#2ecc71';
+    if ( spanFrameRate ) {
+      spanFrameRate.textContent = frameRate;
+      spanFrameRate.style.backgroundColor = frameRate >= 60 ? '#ff8080' : '#2ecc71';
+    }
   }
 
 } )();
