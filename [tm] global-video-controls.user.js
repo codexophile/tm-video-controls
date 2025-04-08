@@ -209,6 +209,16 @@
   function videoEventListeners(video) {
     if (video.classList.contains("video-processed")) return; // 🛑
 
+    video.addEventListener("loadedmetadata", async () => {
+      const bitrate = await getBitrate(video);
+      displayBitrate(bitrate);
+    });
+
+    if (video.readyState >= 1) {
+      // HAVE_METADATA or higher
+      getBitrate(video).then((bitrate) => displayBitrate(bitrate));
+    }
+
     video.addEventListener("playing", () => {
       titler("[media playing]");
     });
@@ -403,31 +413,71 @@
     if (direction === "right") activeVideo.currentTime += timeIncrTiny;
   }
 
-  const frameRateCache = new Map();
+  const videoInfoCache = new Map();
+
+  async function getBitrate(videoEl) {
+    const videoUrl = videoEl.src;
+    let videoInfo = videoInfoCache.get(videoUrl);
+    if (videoInfo && videoInfo.bitrate) {
+      return videoInfo.bitrate;
+    }
+
+    try {
+      const response = await fetch(videoEl.currentSrc, { method: "HEAD" });
+      const contentLength = response.headers.get("Content-Length");
+      if (contentLength && videoEl.duration && isFinite(videoEl.duration)) {
+        const sizeInBytes = parseInt(contentLength, 10);
+        const durationInSeconds = videoEl.duration;
+        const bitrate = (sizeInBytes * 8) / durationInSeconds; // bits per second
+        const roundedBitrate = Math.round(bitrate);
+        videoInfo = videoInfo || {};
+        videoInfo.bitrate = roundedBitrate;
+        videoInfoCache.set(videoUrl, videoInfo);
+        return roundedBitrate;
+      }
+    } catch (error) {
+      console.error("Error fetching video headers:", error);
+    }
+    return null; // Return null if bitrate can't be calculated
+  }
+
+  function displayBitrate(bitrate) {
+    const spanBitrate = document.querySelector("#bitrate-display");
+    if (spanBitrate) {
+      if (bitrate) {
+        let displayValue;
+        if (bitrate >= 1000000) {
+          displayValue = `${(bitrate / 1000000).toFixed(1)} Mbps`;
+        } else {
+          displayValue = `${(bitrate / 1000).toFixed(0)} kbps`;
+        }
+        spanBitrate.textContent = displayValue;
+      } else {
+        spanBitrate.textContent = "N/A";
+      }
+    }
+  }
 
   function updateFrameRate(videoEl) {
     if (!videoEl || !videoEl.src) return;
 
     const videoUrl = videoEl.src;
-
-    // Check if the frame rate is already cached for this URL
-    if (frameRateCache.has(videoUrl)) {
-      const cachedFrameRate = frameRateCache.get(videoUrl);
-      displayFrameRate(cachedFrameRate);
+    let videoInfo = videoInfoCache.get(videoUrl);
+    if (videoInfo && videoInfo.frameRate) {
+      displayFrameRate(videoInfo.frameRate);
       return;
     }
 
-    // Capture video track settings
     const videoTrack = videoEl.captureStream().getVideoTracks()[0];
     if (!videoTrack) return;
 
     const settings = videoTrack.getSettings();
     const frameRate = Math.round(settings.frameRate / videoEl.playbackRate);
 
-    // Store in cache using URL as key
-    frameRateCache.set(videoUrl, frameRate);
+    videoInfo = videoInfo || {};
+    videoInfo.frameRate = frameRate;
+    videoInfoCache.set(videoUrl, videoInfo);
 
-    // Display frame rate
     displayFrameRate(frameRate);
   }
 

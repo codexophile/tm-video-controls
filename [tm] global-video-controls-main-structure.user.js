@@ -2,6 +2,7 @@ const htmlStructure = `
   <div class="controlPanel" id="video-controlPanel">
     <div id="contPanelHeader" class=important>
       <span id="frame-rate-display" class=important></span>
+      <span id="bitrate-display" class=important></span>
       <span class="divHeight text important">x</span>
       <span id="spanCurrentTime" class="text"></span>
       <span id="spanRemainingTime" class="text">x</span>
