@@ -1,5 +1,5 @@
-( async function () {
-  'use strict';
+(async function () {
+  "use strict";
 
   let activeVideo;
   const fastSpeed = 3;
@@ -7,281 +7,373 @@
   let timeIncrSmall = 5;
   let timeIncrLarge = 60;
 
-  let controlPanel, vidProgressEl, speedDispEl, volDispEl, slidVolFinEl, divHeightEl;
+  let controlPanel,
+    vidProgressEl,
+    speedDispEl,
+    volDispEl,
+    slidVolFinEl,
+    divHeightEl;
 
-  new MutationObserver( debounce( main, 150 ) ).observe( document.body, { childList: true, subtree: true } );
-  document.addEventListener( 'scroll', debounce( main, 150 ) );
-  document.addEventListener( "keyup", keyboardEvent, false );
-  document.addEventListener( 'mousedown', addMouseEvents );
+  new MutationObserver(debounce(main, 150)).observe(document.body, {
+    childList: true,
+    subtree: true,
+  });
+  document.addEventListener("scroll", debounce(main, 150));
+  document.addEventListener("keyup", keyboardEvent, false);
+  document.addEventListener("mousedown", addMouseEvents);
 
-  async function main () {
-
+  async function main() {
     activeVideo = getActiveVideo();
-    const vidContPanel = document.querySelector( `#video-controlPanel` );
-    if ( !activeVideo ) {
+    const vidContPanel = document.querySelector(`#video-controlPanel`);
+    if (!activeVideo) {
       // vidContPanel.style.display = 'none';
     }
 
-    if ( activeVideo && !vidContPanel ) {
+    if (activeVideo && !vidContPanel) {
       addToolbar();
-      const collapsibleCont = await waitFor( '#collapsibleContent' );
-      generateToolbarButton( '📹', collapsibleCont, null, () => { fadeToggle( document.querySelectorAll( `#video-controlPanel` ), 2500 ); } );
+      const collapsibleCont = await waitFor("#collapsibleContent");
+      generateToolbarButton("📹", collapsibleCont, null, () => {
+        fadeToggle(document.querySelectorAll(`#video-controlPanel`), 2500);
+      });
     }
-    if ( !activeVideo && vidContPanel )
-      vidContPanel.style.display = 'none';
-    else if ( vidContPanel )
-      vidContPanel.style.display = '';
+    if (!activeVideo && vidContPanel) vidContPanel.style.display = "none";
+    else if (vidContPanel) vidContPanel.style.display = "";
 
-    if ( activeVideo ) {
-      videoEventListeners( activeVideo );
+    if (activeVideo) {
+      videoEventListeners(activeVideo);
       initializeToolbar();
     }
-
   }
 
-  function addToolbar () {
-
+  function addToolbar() {
     // HTML Structure
-    const controlPanel = generateElements( htmlStructure );
+    const controlPanel = generateElements(htmlStructure);
     // CSS Styles
-    GM_addStyle( styles );
+    GM_addStyle(styles);
 
-    document.body.append( controlPanel );
-    controlPanel.querySelectorAll( ':not(.important)' ).forEach( item => { item.style.display = 'none'; } );
+    document.body.append(controlPanel);
+    controlPanel.querySelectorAll(":not(.important)").forEach((item) => {
+      item.style.display = "none";
+    });
 
-    const contPanelHeader = controlPanel.querySelector( '#contPanelHeader' );
-    vidProgressEl = controlPanel.querySelector( `#progress` );
-    speedDispEl = controlPanel.querySelector( '#speedDisp' );
-    volDispEl = controlPanel.querySelector( '#volDisp' );
-    slidVolFinEl = controlPanel.querySelector( `.slidVolFin` );
-    divHeightEl = controlPanel.querySelector( '.divHeight' );
+    const contPanelHeader = controlPanel.querySelector("#contPanelHeader");
+    vidProgressEl = controlPanel.querySelector(`#progress`);
+    speedDispEl = controlPanel.querySelector("#speedDisp");
+    volDispEl = controlPanel.querySelector("#volDisp");
+    slidVolFinEl = controlPanel.querySelector(`.slidVolFin`);
+    divHeightEl = controlPanel.querySelector(".divHeight");
 
     // dragElement( controlPanel, controlPanel );
-    makeDraggable( controlPanel );
-    contPanelHeader.addEventListener( 'mousedown', () => { controlPanel.style.transition = 'unset'; } );
-    contPanelHeader.addEventListener( 'mouseup', () => { controlPanel.style.transition = 'left 0.5s, top 0.5s, opacity 0.2s'; } );
+    makeDraggable(controlPanel);
+    contPanelHeader.addEventListener("mousedown", () => {
+      controlPanel.style.transition = "unset";
+    });
+    contPanelHeader.addEventListener("mouseup", () => {
+      controlPanel.style.transition = "left 0.5s, top 0.5s, opacity 0.2s";
+    });
 
-    controlPanel.querySelector( '.butClose' ).addEventListener( 'click', () => { fadeOut( controlPanel, 250 ); } );
-    controlPanel.querySelector( '.head' ).addEventListener( 'click', () => { toggle( controlPanel.querySelectorAll( ':not(.important)' ) ); } );
-    controlPanel.querySelector( '#speedToggle' ).addEventListener( 'click', () => { speedToggle(); } );
-    controlPanel.querySelector( '#buttonPlay' ).addEventListener( 'click', () => { togglePlayPause(); } );
+    controlPanel.querySelector(".butClose").addEventListener("click", () => {
+      fadeOut(controlPanel, 250);
+    });
+    controlPanel.querySelector(".head").addEventListener("click", () => {
+      toggle(controlPanel.querySelectorAll(":not(.important)"));
+    });
+    controlPanel.querySelector("#speedToggle").addEventListener("click", () => {
+      speedToggle();
+    });
+    controlPanel.querySelector("#buttonPlay").addEventListener("click", () => {
+      togglePlayPause();
+    });
 
-    vidProgressEl.addEventListener( 'input', ( e ) => { activeVideo.currentTime = e.target.value / 100 * activeVideo.duration; } );
-    slidVolFinEl.addEventListener( 'input', ( e ) => { activeVideo.volume = parseFloat( parseFloat( e.target.value ) );/* ; volumeDisplay.value = this.value */ } );
+    vidProgressEl.addEventListener("input", (e) => {
+      activeVideo.currentTime = (e.target.value / 100) * activeVideo.duration;
+    });
+    slidVolFinEl.addEventListener("input", (e) => {
+      activeVideo.volume = parseFloat(
+        parseFloat(e.target.value)
+      ); /* ; volumeDisplay.value = this.value */
+    });
 
-    controlPanel.querySelector( '.timejumpLOne' ).addEventListener( 'click', () => { activeVideo.currentTime -= timeIncrSmall; } );
-    controlPanel.querySelector( '.timejumpROne' ).addEventListener( 'click', () => { activeVideo.currentTime += timeIncrSmall; } );
-    controlPanel.querySelector( '.timejumpLTwo' ).addEventListener( 'click', () => { activeVideo.currentTime -= timeIncrLarge; } );
-    controlPanel.querySelector( '.timejumpRTwo' ).addEventListener( 'click', () => { activeVideo.currentTime += timeIncrLarge; } );
-    controlPanel.querySelector( '#checkbox-loop-vid' ).addEventListener( 'click', ( event ) => { activeVideo.loop = event.target.checked; } );
+    controlPanel
+      .querySelector(".timejumpLOne")
+      .addEventListener("click", () => {
+        activeVideo.currentTime -= timeIncrSmall;
+      });
+    controlPanel
+      .querySelector(".timejumpROne")
+      .addEventListener("click", () => {
+        activeVideo.currentTime += timeIncrSmall;
+      });
+    controlPanel
+      .querySelector(".timejumpLTwo")
+      .addEventListener("click", () => {
+        activeVideo.currentTime -= timeIncrLarge;
+      });
+    controlPanel
+      .querySelector(".timejumpRTwo")
+      .addEventListener("click", () => {
+        activeVideo.currentTime += timeIncrLarge;
+      });
+    controlPanel
+      .querySelector("#checkbox-loop-vid")
+      .addEventListener("click", (event) => {
+        activeVideo.loop = event.target.checked;
+      });
 
-    controlPanel.querySelector( `#muteButton` ).addEventListener( 'click', function () { activeVideo.muted = !activeVideo.muted; } );
-    controlPanel.querySelector( `#frameStepL` ).addEventListener( 'click', () => { frameStep( 'left' ); } );
-    controlPanel.querySelector( `#frameStepR` ).addEventListener( 'click', () => { frameStep( 'right' ); } );
-    controlPanel.querySelector( '#buttonResize' ).addEventListener( 'click', () => { if ( activeVideo.videoHeight ) activeVideo.style.height = `${ activeVideo.videoHeight }px`; } );
-    controlPanel.querySelector( '#buttonScroll' ).addEventListener( 'click', () => { activeVideo.scrollIntoView(); } );
-    controlPanel.querySelector( '#buttonLog' ).addEventListener( 'click', () => { console.log( activeVideo ); } );
-    controlPanel.querySelector( '#copyPageUrl' ).addEventListener( 'click', ( e ) => { e.preventDefault(); GM_setClipboard( location.href ); return false; } );
-    controlPanel.querySelector( '#copyVidSrc' ).addEventListener( 'click', ( e ) => { GM_setClipboard( activeVideo.currentSrc ); } );
-    controlPanel.querySelector( `#buttonSnap` ).addEventListener( 'click', () => { snap(); } );
-    controlPanel.querySelector( `#buttonGenSb` ).addEventListener( 'click', () => { generateStoryboard(); } );
+    controlPanel
+      .querySelector(`#muteButton`)
+      .addEventListener("click", function () {
+        activeVideo.muted = !activeVideo.muted;
+      });
+    controlPanel.querySelector(`#frameStepL`).addEventListener("click", () => {
+      frameStep("left");
+    });
+    controlPanel.querySelector(`#frameStepR`).addEventListener("click", () => {
+      frameStep("right");
+    });
+    controlPanel
+      .querySelector("#buttonResize")
+      .addEventListener("click", () => {
+        if (activeVideo.videoHeight)
+          activeVideo.style.height = `${activeVideo.videoHeight}px`;
+      });
+    controlPanel
+      .querySelector("#buttonScroll")
+      .addEventListener("click", () => {
+        activeVideo.scrollIntoView();
+      });
+    controlPanel.querySelector("#buttonLog").addEventListener("click", () => {
+      console.log(activeVideo);
+    });
+    controlPanel
+      .querySelector("#copyPageUrl")
+      .addEventListener("click", (e) => {
+        e.preventDefault();
+        GM_setClipboard(location.href);
+        return false;
+      });
+    controlPanel.querySelector("#copyVidSrc").addEventListener("click", (e) => {
+      GM_setClipboard(activeVideo.currentSrc);
+    });
+    controlPanel.querySelector(`#buttonSnap`).addEventListener("click", () => {
+      snap();
+    });
+    controlPanel.querySelector(`#buttonGenSb`).addEventListener("click", () => {
+      generateStoryboard();
+    });
 
-    controlPanel.querySelector( `#buttonRotateL` ).addEventListener( 'click', () => { rotate( -90 ); } );
-    controlPanel.querySelector( `#buttonRotateR` ).addEventListener( 'click', () => { rotate( 90 ); } );
+    controlPanel
+      .querySelector(`#buttonRotateL`)
+      .addEventListener("click", () => {
+        rotate(-90);
+      });
+    controlPanel
+      .querySelector(`#buttonRotateR`)
+      .addEventListener("click", () => {
+        rotate(90);
+      });
 
-    speedDispEl.addEventListener( 'change', ( e ) => { activeVideo.playbackRate = e.target.value; } );
-    volDispEl.addEventListener( 'change', ( e ) => { activeVideo.volume = e.target.value; } );
+    speedDispEl.addEventListener("change", (e) => {
+      activeVideo.playbackRate = e.target.value;
+    });
+    volDispEl.addEventListener("change", (e) => {
+      activeVideo.volume = e.target.value;
+    });
 
     return controlPanel;
 
-    $( 'span.text' ).css( 'color', 'unset !important' );
+    $("span.text").css("color", "unset !important");
 
-
-    $( `#progress` ).on( 'mousedown', function () {
-      if ( getActiveVideo().paused ) return;
+    $(`#progress`).on("mousedown", function () {
+      if (getActiveVideo().paused) return;
       togglePlayPause();
-    } );
-    $( `#progress` ).on( 'mouseup', togglePlayPause );
+    });
+    $(`#progress`).on("mouseup", togglePlayPause);
 
     //?pppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp
 
     initializeToolbar();
-
   }
 
-  function initializeToolbar () {
-
+  function initializeToolbar() {
     slidVolFinEl.value = activeVideo.volume;
     volDispEl.value = activeVideo.volume;
     speedDispEl.value = activeVideo.playbackRate;
     divHeightEl.textContent = activeVideo.videoHeight;
-
   }
 
-  function titler ( text ) {
-    if ( document.getElementById( 'cbAutoSwitch' )?.checked )
-      document.title = text;
+  function titler(text) {
+    if (document.getElementById("cbAutoSwitch")?.checked) document.title = text;
   }
 
-  function videoEventListeners ( video ) {
+  function videoEventListeners(video) {
+    if (video.classList.contains("video-processed")) return; // 🛑
 
-    if ( video.classList.contains( 'video-processed' ) ) return; // 🛑
-
-    video.addEventListener( 'playing', () => { titler( "[media playing]" ); } );
-    video.addEventListener( 'pause', () => { titler( "[media  paused]" ); } );
-    video.addEventListener( 'waiting', () => { titler( "[media waiting]" ); } );
-    video.addEventListener( 'stalled', () => { titler( "[media stalled]" ); } );
-
+    video.addEventListener("playing", () => {
+      titler("[media playing]");
+    });
+    video.addEventListener("pause", () => {
+      titler("[media  paused]");
+    });
+    video.addEventListener("waiting", () => {
+      titler("[media waiting]");
+    });
+    video.addEventListener("stalled", () => {
+      titler("[media stalled]");
+    });
 
     let lastUpdate = 0;
-    video.addEventListener( 'timeupdate', ( event ) => {
+    video.addEventListener("timeupdate", (event) => {
       const now = Date.now();
-      if ( now - lastUpdate < 50 ) return; // Only update every 50ms
+      if (now - lastUpdate < 50) return; // Only update every 50ms
       lastUpdate = now;
 
-      if ( activeVideo != event.target ) return; // 🛑
+      if (activeVideo != event.target) return; // 🛑
 
-      vidProgressEl.value = video.currentTime / video.duration * 100;
+      vidProgressEl.value = (video.currentTime / video.duration) * 100;
 
       const duration = video.duration;
       const currentTime = video.currentTime;
 
-      const spanVidHeight = document.querySelector( `.divHeight` );
-      spanVidHeight.style.backgroundColor = video.videoHeight >= 1080
-        ? '#ff8080'
-        : '#2ecc71';
+      const spanVidHeight = document.querySelector(`.divHeight`);
+      spanVidHeight.style.backgroundColor =
+        video.videoHeight >= 1080 ? "#ff8080" : "#2ecc71";
 
-      updateFrameRate( video );
+      updateFrameRate(video);
 
-      const spanRemainingTime = document.querySelector( '#spanRemainingTime' );
-      const spanCurrentTime = document.querySelector( '#spanCurrentTime' );
-      const spanActualRemTime = document.querySelector( `#spanActualRemainingTime` );
+      const spanRemainingTime = document.querySelector("#spanRemainingTime");
+      const spanCurrentTime = document.querySelector("#spanCurrentTime");
+      const spanActualRemTime = document.querySelector(
+        `#spanActualRemainingTime`
+      );
 
-      fadeIn( spanRemainingTime );
-      fadeIn( spanCurrentTime );
+      fadeIn(spanRemainingTime);
+      fadeIn(spanCurrentTime);
 
-      const remainingTime = Math.round( duration - currentTime );
-      const readable = forHumans( remainingTime );
+      const remainingTime = Math.round(duration - currentTime);
+      const readable = forHumans(remainingTime);
       spanRemainingTime.textContent = readable;
-      spanCurrentTime.textContent = forHumans( Math.round( currentTime ) );
+      spanCurrentTime.textContent = forHumans(Math.round(currentTime));
 
-      if ( video.playbackRate == 1 ) { fadeOut( spanActualRemTime ); return; } // 🛑
-      fadeIn( spanActualRemTime );
-      const actualRemainingTime = Math.round( ( duration - currentTime ) / video.playbackRate );
-      const readableActual = forHumans( actualRemainingTime );
+      if (video.playbackRate == 1) {
+        fadeOut(spanActualRemTime);
+        return;
+      } // 🛑
+      fadeIn(spanActualRemTime);
+      const actualRemainingTime = Math.round(
+        (duration - currentTime) / video.playbackRate
+      );
+      const readableActual = forHumans(actualRemainingTime);
       spanActualRemTime.textContent = readableActual;
+    });
 
-    } );
-
-    video.addEventListener( 'ratechange', ( event ) => { speedDispEl.value = event.target.playbackRate; } );
-    video.addEventListener( 'volumechange', ( event ) => {
+    video.addEventListener("ratechange", (event) => {
+      speedDispEl.value = event.target.playbackRate;
+    });
+    video.addEventListener("volumechange", (event) => {
       volDispEl.value = event.target.volume;
       slidVolFinEl.value = event.target.volume;
-    } );
+    });
 
-    video.classList.add( 'video-processed' );
-
+    video.classList.add("video-processed");
   }
 
-  function rotate ( inputAngle ) {
+  function rotate(inputAngle) {
     const currentTransform = activeVideo.style.transform;
-    const match = currentTransform.match( /rotate\((-?\d+)deg\)/ );
-    const currentAngle = match ? match[ 1 ] : 0;
+    const match = currentTransform.match(/rotate\((-?\d+)deg\)/);
+    const currentAngle = match ? match[1] : 0;
     const newAngle = +currentAngle + +inputAngle;
-    activeVideo.style.transform = `rotate(${ newAngle }deg)`;
+    activeVideo.style.transform = `rotate(${newAngle}deg)`;
   }
 
-  function snap () {
-
-    const canvas = generateElements( '<canvas></canvas>', document.body );
+  function snap() {
+    const canvas = generateElements("<canvas></canvas>", document.body);
     canvas.width = activeVideo.videoWidth;
     canvas.height = activeVideo.videoHeight;
-    const canvasContext = canvas.getContext( "2d" );
-    canvasContext.drawImage( activeVideo, 0, 0 );
-    const imageUrl = canvas.toDataURL( 'image/png' ).replace( "image/png", "image/octet-stream" );
+    const canvasContext = canvas.getContext("2d");
+    canvasContext.drawImage(activeVideo, 0, 0);
+    const imageUrl = canvas
+      .toDataURL("image/png")
+      .replace("image/png", "image/octet-stream");
 
-    const link = generateElements( '<a></a>', document.body );
+    const link = generateElements("<a></a>", document.body);
     const fileName = document.title ? document.title : location.href;
-    link.setAttribute( 'download', `${ fileName }.png` );
-    link.setAttribute( 'href', imageUrl );
+    link.setAttribute("download", `${fileName}.png`);
+    link.setAttribute("href", imageUrl);
     link.click();
 
     canvas.remove();
     link.remove();
-
   }
 
-  function generateStoryboard () {
+  function generateStoryboard() {
     activeVideo.currentTime = 0;
-    setInterval( () => {
+    setInterval(() => {
       activeVideo.currentTime += 60;
-    }, 1000 );
+    }, 1000);
     // while ( activeVideo.currentTime < activeVideo.duration ) {
     // }
   }
 
-  function addMouseEvents ( event ) {
-    if ( event.target !== getActiveVideo() ) return;
+  function addMouseEvents(event) {
+    if (event.target !== getActiveVideo()) return;
 
-    if ( event.button === 1 ) {
+    if (event.button === 1) {
       event.preventDefault();
       togglePlayPause();
     }
-
   }
 
-  function keyboardEvent ( e ) {
-
+  function keyboardEvent(e) {
     let activeElementType = document.activeElement.tagName.toLowerCase();
-    if ( activeElementType === 'input' ) return; // 🛑
+    if (activeElementType === "input") return; // 🛑
 
-    if ( !activeVideo ) {
+    if (!activeVideo) {
       return; // 🛑
     }
 
-    if ( e.key == 'j' ) {
+    if (e.key == "j") {
       activeVideo.currentTime = activeVideo.currentTime - timeIncrSmall;
     }
-    if ( e.key == 'l' ) {
+    if (e.key == "l") {
       activeVideo.currentTime = activeVideo.currentTime + timeIncrSmall;
     }
-    if ( e.key == 'z' ) {
+    if (e.key == "z") {
       speedToggle();
     }
-    if ( e.key === 'x' ) {
+    if (e.key === "x") {
       activeVideo.playbackRate = activeVideo.playbackRate - 0.5;
     }
-    if ( e.key === 'c' ) {
+    if (e.key === "c") {
       activeVideo.playbackRate = activeVideo.playbackRate + 0.5;
     }
-    if ( e.key === "m" ) {
-      activeVideo.muted = !activeVideo.toggleAttribute( "muted" );
+    if (e.key === "m") {
+      activeVideo.muted = !activeVideo.toggleAttribute("muted");
     }
-    if ( e.code === "KeyB" ) {
+    if (e.code === "KeyB") {
       activeVideo.volume -= 0.01;
     }
-    if ( e.code === "KeyN" ) {
+    if (e.code === "KeyN") {
       activeVideo.volume += 0.01;
     }
-    if ( e.shiftKey && e.code === "KeyB" ) {
+    if (e.shiftKey && e.code === "KeyB") {
       activeVideo.volume -= 0.001;
     }
-    if ( e.shiftKey && e.code === "KeyN" ) {
+    if (e.shiftKey && e.code === "KeyN") {
       activeVideo.volume += 0.001;
     }
-    if ( e.shiftKey && e.code === "KeyM" ) {
+    if (e.shiftKey && e.code === "KeyM") {
       activeVideo.muted = false;
       activeVideo.volume = 0.5;
     }
-
   }
 
-  function togglePlayPause () {
+  function togglePlayPause() {
     activeVideo.paused ? activeVideo.play() : activeVideo.pause();
   }
 
-  function speedToggle () {
-    if ( activeVideo.playbackRate == 1 ) {
+  function speedToggle() {
+    if (activeVideo.playbackRate == 1) {
       activeVideo.playbackRate = fastSpeed;
     } else {
       activeVideo.playbackRate = 1;
@@ -289,63 +381,62 @@
     // $( activeVideo ).parent().addClass( 'speedManual' )
   }
 
-  function getActiveVideo () {
+  function getActiveVideo() {
+    let mediaEls = [...document.querySelectorAll("video, audio")];
+    const workingMedia = mediaEls.filter((el) => el.duration);
+    const playingMedia = mediaEls.filter((el) => !el.paused);
+    let visibleEls = playingMedia.filter((el) => isElementInViewport(el));
 
-    let mediaEls = [ ...document.querySelectorAll( "video, audio" ) ];
-    const workingMedia = mediaEls.filter( el => el.duration );
-    const playingMedia = mediaEls.filter( el => !el.paused );
-    let visibleEls = playingMedia.filter( el => isElementInViewport( el ) );
+    const activeMedia = playingMedia.length
+      ? playingMedia
+      : visibleEls.length
+      ? visibleEls
+      : workingMedia;
 
-    const activeMedia =
-      playingMedia.length ? playingMedia : visibleEls.length ? visibleEls : workingMedia;
-
-    if ( activeMedia[ 0 ] ) return activeMedia[ 0 ];
+    if (activeMedia[0]) return activeMedia[0];
     return null;
-
   }
 
-  function frameStep ( direction ) {
+  function frameStep(direction) {
     activeVideo.pause();
-    if ( direction === 'left' )
-      activeVideo.currentTime -= timeIncrTiny;
-    if ( direction === 'right' )
-      activeVideo.currentTime += timeIncrTiny;
+    if (direction === "left") activeVideo.currentTime -= timeIncrTiny;
+    if (direction === "right") activeVideo.currentTime += timeIncrTiny;
   }
 
   const frameRateCache = new Map();
 
-  function updateFrameRate ( videoEl ) {
-    if ( !videoEl || !videoEl.src ) return;
+  function updateFrameRate(videoEl) {
+    if (!videoEl || !videoEl.src) return;
 
     const videoUrl = videoEl.src;
 
     // Check if the frame rate is already cached for this URL
-    if ( frameRateCache.has( videoUrl ) ) {
-      const cachedFrameRate = frameRateCache.get( videoUrl );
-      displayFrameRate( cachedFrameRate );
+    if (frameRateCache.has(videoUrl)) {
+      const cachedFrameRate = frameRateCache.get(videoUrl);
+      displayFrameRate(cachedFrameRate);
       return;
     }
 
     // Capture video track settings
-    const videoTrack = videoEl.captureStream().getVideoTracks()[ 0 ];
-    if ( !videoTrack ) return;
+    const videoTrack = videoEl.captureStream().getVideoTracks()[0];
+    if (!videoTrack) return;
 
     const settings = videoTrack.getSettings();
-    const frameRate = Math.round( settings.frameRate / videoEl.playbackRate );
+    const frameRate = Math.round(settings.frameRate / videoEl.playbackRate);
 
     // Store in cache using URL as key
-    frameRateCache.set( videoUrl, frameRate );
+    frameRateCache.set(videoUrl, frameRate);
 
     // Display frame rate
-    displayFrameRate( frameRate );
+    displayFrameRate(frameRate);
   }
 
-  function displayFrameRate ( frameRate ) {
-    const spanFrameRate = document.querySelector( `#frame-rate-display` );
-    if ( spanFrameRate ) {
+  function displayFrameRate(frameRate) {
+    const spanFrameRate = document.querySelector(`#frame-rate-display`);
+    if (spanFrameRate) {
       spanFrameRate.textContent = frameRate;
-      spanFrameRate.style.backgroundColor = frameRate >= 60 ? '#ff8080' : '#2ecc71';
+      spanFrameRate.style.backgroundColor =
+        frameRate >= 60 ? "#ff8080" : "#2ecc71";
     }
   }
-
-} )();
+})();

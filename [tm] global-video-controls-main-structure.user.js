@@ -26,7 +26,7 @@ const htmlStructure = `
       <button class="timejumpROne important">➕</button> 
       <button class="timejumpRTwo">➕</button>
       <input type="checkbox" class="important" title="Loop video" id="checkbox-loop-vid">
-      <a id="copyPageUrl" title="Page" class="important button" href="${ location.href }">📄</a>
+      <a id="copyPageUrl" title="Page" class="important button" href="${location.href}">📄</a>
       <button id="copyVidSrc" class="brsrc" title="CurrentSrc">🎞️</button>
     </div>
 
@@ -47,7 +47,7 @@ const htmlStructure = `
   </div>
 `;
 
-const margins = '2px';
+const margins = "2px";
 
 const styles = `
   .controlPanel {
@@ -62,7 +62,7 @@ const styles = `
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     font-family: Arial, sans-serif;
     color: #ecf0f1;
-    padding: ${ margins };
+    padding: ${margins};
     opacity: 0.5;
   }
 
@@ -72,7 +72,7 @@ const styles = `
 
   #contPanelHeader {
     background-color: #34495e;
-    padding: ${ margins };
+    padding: ${margins};
     border-radius: 6px 6px 0 0;
     position: relative;
     font-size: small; 
@@ -81,8 +81,8 @@ const styles = `
   #contPanelHeader span {
     background-color: #2ecc71;
     color: #2c3e50;
-    padding: ${ margins };
-    margin: 0 ${ margins };
+    padding: ${margins};
+    margin: 0 ${margins};
     border-radius: 4px;
     font-weight: bold;
   }
@@ -102,15 +102,15 @@ const styles = `
     display: flex;
     flex-wrap: wrap;
     justify-content: space-between;
-    margin: ${ margins } 0;
+    margin: ${margins} 0;
   }
 
   #video-controlPanel :is(.numinp, button, .button) {
     background-color: #3498db;
     border: none;
     color: #fff;
-    padding: ${ margins };
-    margin: ${ margins };
+    padding: ${margins};
+    margin: ${margins};
     border-radius: 4px;
     cursor: pointer;
     transition: background-color 0.3s;
@@ -121,12 +121,12 @@ const styles = `
   }
 
   #video-controlPanel input[type="checkbox"] {
-    margin: 0 ${ margins };
+    margin: 0 ${margins};
   }
 
   .vidContRange {
     width: 100%;
-    margin: ${ margins } 0;
+    margin: ${margins} 0;
     -webkit-appearance: none;
     background: transparent;
   }
