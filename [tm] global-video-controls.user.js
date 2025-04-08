@@ -468,7 +468,9 @@
       return;
     }
 
-    const videoTrack = videoEl.captureStream().getVideoTracks()[0];
+    const stream = videoEl.captureStream();
+    if (!stream) return;
+    const videoTrack = stream.getVideoTracks()[0];
     if (!videoTrack) return;
 
     const settings = videoTrack.getSettings();
