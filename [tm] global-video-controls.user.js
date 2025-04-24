@@ -436,7 +436,7 @@
         return roundedBitrate;
       }
     } catch (error) {
-      console.error("Error fetching video headers:", error);
+      // console.error("Error fetching video headers:", error);
     }
     return null; // Return null if bitrate can't be calculated
   }
@@ -468,7 +468,10 @@
       return;
     }
 
-    const stream = videoEl.captureStream();
+    let stream;
+    try {
+      stream = videoEl.captureStream();
+    } catch (error) {}
     if (!stream) return;
     const videoTrack = stream.getVideoTracks()[0];
     if (!videoTrack) return;
