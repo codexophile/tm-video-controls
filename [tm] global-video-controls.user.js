@@ -199,7 +199,8 @@
     slidVolFinEl.value = activeVideo.volume;
     volDispEl.value = activeVideo.volume;
     speedDispEl.value = activeVideo.playbackRate;
-    divHeightEl.textContent = activeVideo.videoHeight;
+    divHeightEl.textContent = `${activeVideo.videoWidth}×${activeVideo.videoHeight}`;
+    divHeightEl.title = activeVideo.videoWidth * activeVideo.videoHeight;
   }
 
   function titler(text) {
@@ -245,9 +246,10 @@
       const duration = video.duration;
       const currentTime = video.currentTime;
 
+      const videoArea = video.videoWidth * video.videoHeight;
       const spanVidHeight = document.querySelector(`.divHeight`);
       spanVidHeight.style.backgroundColor =
-        video.videoHeight >= 1080 ? "#ff8080" : "#2ecc71";
+        videoArea >= 1920 * 1080 ? "#ff8080" : "#2ecc71";
 
       updateFrameRate(video);
 
