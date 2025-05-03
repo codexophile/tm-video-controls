@@ -94,6 +94,9 @@
       ); /* ; volumeDisplay.value = this.value */
     });
 
+    controlPanel.querySelector("#rewind-btn").addEventListener("click", () => {
+      activeVideo.currentTime = 0;
+    });
     controlPanel
       .querySelector(".timejumpLOne")
       .addEventListener("click", () => {
@@ -455,7 +458,7 @@
         }
         spanBitrate.textContent = displayValue;
       } else {
-        spanBitrate.textContent = "N/A";
+        spanBitrate.textContent = "";
       }
     }
   }

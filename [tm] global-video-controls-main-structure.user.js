@@ -17,11 +17,12 @@ const htmlStructure = `
       <button id="muteButton" for="volDisp">🔊</button>
       <input type="checkbox" title="Auto Switch" id="cbAutoSwitch">
     </div>
-        
+      
     <div class="buttonsRow important">
       <button class="head important">⚫</button>
       <button class="important" id="buttonPlay">▶</button> 
       <button class="important" id="speedToggle">💨</button>
+      <button class="important" id="rewind-btn">0️⃣</button>
       <button class="timejumpLTwo">➖</button> 
       <button class="timejumpLOne important">➖</button> 
       <button class="timejumpROne important">➕</button> 
