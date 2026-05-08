@@ -2814,6 +2814,50 @@
       });
     }
 
+    // Speed controls popup - Right-click on speed toggle to open
+    const speedToggleBtn = controlPanel.querySelector('#speedToggle');
+    if (speedToggleBtn) {
+      speedToggleBtn.addEventListener('contextmenu', e => {
+        e.preventDefault();
+        const popup = controlPanel.querySelector('#speedControlsPopup');
+        if (!popup) return;
+        const panelRect = controlPanel.getBoundingClientRect();
+        const btnRect = speedToggleBtn.getBoundingClientRect();
+        const isHidden = popup.hasAttribute('hidden');
+        if (isHidden) {
+          // position popup below the button
+          popup.style.position = 'absolute';
+          const left = btnRect.left - panelRect.left;
+          const top = btnRect.bottom - panelRect.top + 8;
+          popup.style.left = `${left}px`;
+          popup.style.top = `${top}px`;
+          popup.removeAttribute('hidden');
+          popup.setAttribute('aria-hidden', 'false');
+        } else {
+          popup.setAttribute('hidden', '');
+          popup.setAttribute('aria-hidden', 'true');
+        }
+      });
+
+      // Close speed popup when clicking outside or pressing Escape
+      document.addEventListener('click', ev => {
+        const popup = controlPanel.querySelector('#speedControlsPopup');
+        if (!popup || popup.hasAttribute('hidden')) return;
+        if (!popup.contains(ev.target) && ev.target !== speedToggleBtn) {
+          popup.setAttribute('hidden', '');
+          popup.setAttribute('aria-hidden', 'true');
+        }
+      });
+      document.addEventListener('keydown', ev => {
+        const popup = controlPanel.querySelector('#speedControlsPopup');
+        if (!popup || popup.hasAttribute('hidden')) return;
+        if (ev.key === 'Escape') {
+          popup.setAttribute('hidden', '');
+          popup.setAttribute('aria-hidden', 'true');
+        }
+      });
+    }
+
     if (inputSubtitleSelectorEl) {
       const applySelector = value => {
         subtitleSelector = (value || '').trim();
@@ -2977,6 +3021,57 @@
 
       activeVideo.playbackRate = e.target.value;
     });
+
+    // Sync number input with slider
+    speedDispEl.addEventListener('input', e => {
+      const speedSlider = controlPanel.querySelector('.slidSpeedFin');
+      if (speedSlider) {
+        const parsed = parseFloat(e.target.value);
+        if (Number.isFinite(parsed) && parsed >= 0) {
+          speedSlider.value = String(parsed);
+        }
+      }
+    });
+
+    // Speed slider in popup - sync with number input and update playback rate
+    const speedSlider = controlPanel.querySelector('.slidSpeedFin');
+    if (speedSlider) {
+      speedSlider.addEventListener('input', e => {
+        const newSpeed = parseFloat(e.target.value);
+        if (!Number.isFinite(newSpeed) || newSpeed < 0) return;
+
+        // Update the number input to match the slider
+        speedDispEl.value = String(newSpeed);
+
+        // Update playback rate in real-time
+        if (activeVideo) {
+          if (subtitleAutoSpeedEnabled) {
+            const parsed = parseFloat(newSpeed);
+            if (Number.isFinite(parsed) && parsed > 0) {
+              fastSpeed = parsed;
+              if (numAutoFastSpeedEl) {
+                numAutoFastSpeedEl.value = String(fastSpeed);
+              }
+              syncSubtitleAutoSpeed(activeVideo);
+            }
+          } else {
+            activeVideo.playbackRate = newSpeed;
+          }
+        }
+      });
+
+      speedSlider.addEventListener('change', e => {
+        // Save the setting on final change
+        const newSpeed = parseFloat(e.target.value);
+        if (Number.isFinite(newSpeed) && newSpeed > 0) {
+          if (subtitleAutoSpeedEnabled) {
+            fastSpeed = newSpeed;
+            saveFastSpeedSetting(fastSpeed);
+          }
+        }
+      });
+    }
+
     volDispEl.addEventListener('change', e => {
       activeVideo.volume = e.target.value;
     });
@@ -3027,8 +3122,13 @@
   function applyPanelUiState(controlPanelEl, state) {
     const subtitleAutoPopupEl =
       controlPanelEl.querySelector('#subtitleAutoPopup');
+    const speedControlsPopupEl = controlPanelEl.querySelector(
+      '#speedControlsPopup',
+    );
     const isInSubtitleAutoPopup = item =>
       Boolean(subtitleAutoPopupEl && subtitleAutoPopupEl.contains(item));
+    const isInSpeedControlsPopup = item =>
+      Boolean(speedControlsPopupEl && speedControlsPopupEl.contains(item));
 
     const descendants = controlPanelEl.querySelectorAll('*');
     descendants.forEach(item => {
@@ -3042,6 +3142,7 @@
         )
         .forEach(item => {
           if (isInSubtitleAutoPopup(item)) return;
+          if (isInSpeedControlsPopup(item)) return;
           item.style.display = 'none';
         });
       return;

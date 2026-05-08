@@ -77,10 +77,18 @@ const htmlStructure = `
         <label>Subtitle selector: <input type="text" title="CSS selector for subtitle element." id="inputSubtitleSelector" placeholder="Subtitle selector (example: .ytp-caption-segment)"></label>
       </div>
     </div>
-    <div class="controlRow">
-      <input type="number" title="Speed" step="0.1" min="0.1" max="4" class="numinp" id="speedDisp" value="1">
-      <input type="range" class="slidSpeedFin important vidContRange" min="0.1" max="4" step="0.1" value="1">
-      <input type="checkbox" title="Auto Switch" id="cbAutoSwitch">
+
+    <!-- Speed controls popup (toggled via right-click on the speed toggle button) -->
+    <div id="speedControlsPopup" class="speed-controls-popup" hidden aria-hidden="true">
+      <div class="speed-controls-popup-row">
+        <label>Speed: <input type="number" title="Playback speed" step="0.1" min="0" max="2" class="numinp" id="speedDisp" value="1"></label>
+      </div>
+      <div class="speed-controls-popup-row">
+        <input type="range" class="slidSpeedFin important vidContRange" min="0" max="2" step="0.1" value="1" title="Drag to adjust speed (0-2, middle is 1x)">
+      </div>
+      <div class="speed-controls-popup-row">
+        <label><input type="checkbox" title="Auto Switch" id="cbAutoSwitch"> Auto Switch</label>
+      </div>
     </div>
 
     <!-- subtitle inputs moved into popup (#subtitleAutoPopup) -->
@@ -283,6 +291,30 @@ const styles = `
   }
 
   .subtitle-auto-popup-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 0;
+  }
+
+  /* Popup for speed controls */
+  #speedControlsPopup {
+    position: absolute;
+    min-width: 260px;
+    max-width: min(88vw, 360px);
+    background: linear-gradient(180deg, #34495e 0%, #2c3e50 100%);
+    border: 1px solid rgba(236, 240, 241, 0.12);
+    box-shadow: 0 8px 18px rgba(0,0,0,0.32);
+    padding: 8px;
+    border-radius: 8px;
+    z-index: 100001;
+  }
+
+  #speedControlsPopup[hidden] {
+    display: none;
+  }
+
+  .speed-controls-popup-row {
     display: flex;
     align-items: center;
     gap: 8px;

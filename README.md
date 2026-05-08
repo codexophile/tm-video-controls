@@ -25,6 +25,10 @@ This approach is site-agnostic and works even when native media text tracks are 
 
 1. Open the control panel on a page with video.
 2. In the header's second row, use the `💨` button for manual speed toggle and the `🚀` toggle button for subtitle speed transition mode.
+   - **Right-click on the `💨` speed toggle button** to open the speed controls popup for precise speed adjustment.
+   - The speed slider in the popup ranges from **0 to 2**, with the middle (center) at **1x** (normal speed).
+   - Drag the slider **left** to reduce speed, **right** to increase speed.
+   - The speed number input and slider stay synchronized in real-time.
 3. You can also enable the same transition mode from `Subtitle auto-speed` (checkbox); both controls stay synchronized.
 4. When the active site profile has a subtitle CSS selector saved in userscript storage, the `🚀` button shows a tiny green corner dot.
 5. Enter a subtitle CSS selector in `Subtitle selector`.
