@@ -39,6 +39,7 @@ This approach is site-agnostic and works even when native media text tracks are 
 10. Use `📷` to download a PNG snapshot, or `📋` to copy the current frame image to your clipboard.
 11. The header now also shows compact fixed-width media-state badges next to the cycle button for player, ready, network, and error status; hover each badge to see the full code mapping.
 12. Click the `Time progress` row in the header to open a small summary popup that shows real time spent playing, time spent waiting, total tracked time, the current video duration, and a waste/save comparison.
+13. Floating popups that should survive panel view changes now use the shared `control-popup` class, so new popups can stay visible without adding more UI-state exceptions.
 
 ## Sync Config Across Devices (GitHub Gist)
 

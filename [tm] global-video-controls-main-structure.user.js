@@ -66,7 +66,7 @@ const htmlStructure = `
     </div>
     
     <!-- Subtitle auto-speed popup (toggled via right-click on the rocket button) -->
-    <div id="subtitleAutoPopup" class="subtitle-auto-popup" hidden aria-hidden="true">
+    <div id="subtitleAutoPopup" class="control-popup subtitle-auto-popup" hidden aria-hidden="true">
       <div class="subtitle-auto-popup-row">
         <label><input type="checkbox" title="Enable subtitle auto-speed mode." id="cbSubtitleAutoSpeed"> Enable subtitle auto-speed mode</label>
       </div>
@@ -79,7 +79,7 @@ const htmlStructure = `
     </div>
 
     <!-- Speed controls popup (toggled via right-click on the speed toggle button) -->
-    <div id="speedControlsPopup" class="speed-controls-popup" hidden aria-hidden="true">
+    <div id="speedControlsPopup" class="control-popup speed-controls-popup" hidden aria-hidden="true">
       <div class="speed-controls-popup-row">
         <label>Speed: <input type="number" title="Playback speed" step="0.1" min="0" max="2" class="numinp" id="speedDisp" value="1"></label>
       </div>
@@ -273,8 +273,8 @@ const styles = `
     display: block;
   }
 
-  /* Popup for subtitle auto-speed controls */
-  #subtitleAutoPopup {
+  /* Shared popup surface for floating control panels */
+  .control-popup {
     position: absolute;
     min-width: 260px;
     max-width: min(88vw, 360px);
@@ -286,7 +286,7 @@ const styles = `
     z-index: 100001;
   }
 
-  #subtitleAutoPopup[hidden] {
+  .control-popup[hidden] {
     display: none;
   }
 

@@ -3120,15 +3120,7 @@
   }
 
   function applyPanelUiState(controlPanelEl, state) {
-    const subtitleAutoPopupEl =
-      controlPanelEl.querySelector('#subtitleAutoPopup');
-    const speedControlsPopupEl = controlPanelEl.querySelector(
-      '#speedControlsPopup',
-    );
-    const isInSubtitleAutoPopup = item =>
-      Boolean(subtitleAutoPopupEl && subtitleAutoPopupEl.contains(item));
-    const isInSpeedControlsPopup = item =>
-      Boolean(speedControlsPopupEl && speedControlsPopupEl.contains(item));
+    const isInPersistentPopup = item => Boolean(item.closest('.control-popup'));
 
     const descendants = controlPanelEl.querySelectorAll('*');
     descendants.forEach(item => {
@@ -3141,8 +3133,7 @@
           ':not(.important):not(#contPanelHeader *):not(#contPanelHeader)',
         )
         .forEach(item => {
-          if (isInSubtitleAutoPopup(item)) return;
-          if (isInSpeedControlsPopup(item)) return;
+          if (isInPersistentPopup(item)) return;
           item.style.display = 'none';
         });
       return;
@@ -3153,7 +3144,7 @@
     }
 
     descendants.forEach(item => {
-      if (isInSubtitleAutoPopup(item)) return;
+      if (isInPersistentPopup(item)) return;
       item.style.display = 'none';
     });
 
