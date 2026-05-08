@@ -827,7 +827,7 @@
       right: auto !important;
       bottom: auto !important;
       margin: 0 !important;
-      /* transform: translate(-50%, -50%) !important; */
+      transform: translate(-50%, -50%) !important;
       text-align: center !important;
       width: max-content !important;
       max-width: min(95vw, 95%) !important;
