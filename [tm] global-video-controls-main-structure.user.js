@@ -65,17 +65,25 @@ const htmlStructure = `
       </div>
     </div>
     
+    <!-- Subtitle auto-speed popup (toggled via right-click on the rocket button) -->
+    <div id="subtitleAutoPopup" class="subtitle-auto-popup" hidden aria-hidden="true">
+      <div class="subtitle-auto-popup-row">
+        <label><input type="checkbox" title="Enable subtitle auto-speed mode." id="cbSubtitleAutoSpeed"> Enable subtitle auto-speed mode</label>
+      </div>
+      <div class="subtitle-auto-popup-row">
+        <label>Fast speed: <input type="number" title="Fast speed used when subtitle selector is not present." step="0.1" min="0.1" max="16" class="numinp" id="numAutoFastSpeed" value="3"></label>
+      </div>
+      <div class="subtitle-auto-popup-row">
+        <label>Subtitle selector: <input type="text" title="CSS selector for subtitle element." id="inputSubtitleSelector" placeholder="Subtitle selector (example: .ytp-caption-segment)"></label>
+      </div>
+    </div>
     <div class="controlRow">
       <input type="number" title="Speed" step="0.1" min="0.1" max="4" class="numinp" id="speedDisp" value="1">
       <input type="range" class="slidSpeedFin important vidContRange" min="0.1" max="4" step="0.1" value="1">
       <input type="checkbox" title="Auto Switch" id="cbAutoSwitch">
     </div>
 
-    <div class="controlRow important">
-      <input type="checkbox" title="Enable subtitle auto-speed mode." id="cbSubtitleAutoSpeed">
-      <input type="number" title="Fast speed used when subtitle selector is not present." step="0.1" min="0.1" max="16" class="numinp" id="numAutoFastSpeed" value="3">
-      <input type="text" title="CSS selector for subtitle element." id="inputSubtitleSelector" placeholder="Subtitle selector (example: .ytp-caption-segment)">
-    </div>
+    <!-- subtitle inputs moved into popup (#subtitleAutoPopup) -->
       
     <div class="buttonsRow important">
       <button class="timejumpLTwo important">➖</button> 
@@ -255,6 +263,30 @@ const styles = `
     width: 18px;
     height: 18px;
     display: block;
+  }
+
+  /* Popup for subtitle auto-speed controls */
+  #subtitleAutoPopup {
+    position: absolute;
+    min-width: 260px;
+    max-width: min(88vw, 360px);
+    background: linear-gradient(180deg, #34495e 0%, #2c3e50 100%);
+    border: 1px solid rgba(236, 240, 241, 0.12);
+    box-shadow: 0 8px 18px rgba(0,0,0,0.32);
+    padding: 8px;
+    border-radius: 8px;
+    z-index: 100001;
+  }
+
+  #subtitleAutoPopup[hidden] {
+    display: none;
+  }
+
+  .subtitle-auto-popup-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 0;
   }
 
   .video-state-badges {

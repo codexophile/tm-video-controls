@@ -2768,6 +2768,50 @@
       subtitleSpeedTransitionToggleEl.addEventListener('click', () => {
         setSubtitleAutoSpeedEnabled(!subtitleAutoSpeedEnabled);
       });
+
+      // Right-click to toggle subtitle auto-speed popup
+      subtitleSpeedTransitionToggleEl.addEventListener('contextmenu', e => {
+        e.preventDefault();
+        const popup = controlPanel.querySelector('#subtitleAutoPopup');
+        if (!popup) return;
+        const panelRect = controlPanel.getBoundingClientRect();
+        const btnRect = subtitleSpeedTransitionToggleEl.getBoundingClientRect();
+        const isHidden = popup.hasAttribute('hidden');
+        if (isHidden) {
+          // position popup to the right of the button if possible
+          popup.style.position = 'absolute';
+          const left = btnRect.right - panelRect.left + 8; // px inside controlPanel
+          const top = btnRect.top - panelRect.top;
+          popup.style.left = `${left}px`;
+          popup.style.top = `${top}px`;
+          popup.removeAttribute('hidden');
+          popup.setAttribute('aria-hidden', 'false');
+        } else {
+          popup.setAttribute('hidden', '');
+          popup.setAttribute('aria-hidden', 'true');
+        }
+      });
+
+      // Close popup when clicking outside or pressing Escape
+      document.addEventListener('click', ev => {
+        const popup = controlPanel.querySelector('#subtitleAutoPopup');
+        if (!popup || popup.hasAttribute('hidden')) return;
+        if (
+          !popup.contains(ev.target) &&
+          ev.target !== subtitleSpeedTransitionToggleEl
+        ) {
+          popup.setAttribute('hidden', '');
+          popup.setAttribute('aria-hidden', 'true');
+        }
+      });
+      document.addEventListener('keydown', ev => {
+        const popup = controlPanel.querySelector('#subtitleAutoPopup');
+        if (!popup || popup.hasAttribute('hidden')) return;
+        if (ev.key === 'Escape') {
+          popup.setAttribute('hidden', '');
+          popup.setAttribute('aria-hidden', 'true');
+        }
+      });
     }
 
     if (inputSubtitleSelectorEl) {
@@ -2981,6 +3025,11 @@
   }
 
   function applyPanelUiState(controlPanelEl, state) {
+    const subtitleAutoPopupEl =
+      controlPanelEl.querySelector('#subtitleAutoPopup');
+    const isInSubtitleAutoPopup = item =>
+      Boolean(subtitleAutoPopupEl && subtitleAutoPopupEl.contains(item));
+
     const descendants = controlPanelEl.querySelectorAll('*');
     descendants.forEach(item => {
       item.style.display = '';
@@ -2992,6 +3041,7 @@
           ':not(.important):not(#contPanelHeader *):not(#contPanelHeader)',
         )
         .forEach(item => {
+          if (isInSubtitleAutoPopup(item)) return;
           item.style.display = 'none';
         });
       return;
@@ -3002,6 +3052,7 @@
     }
 
     descendants.forEach(item => {
+      if (isInSubtitleAutoPopup(item)) return;
       item.style.display = 'none';
     });
 
