@@ -13,7 +13,7 @@ Shadow DOM support:
 Behavior:
 
 - If your subtitle selector matches visible, non-empty subtitle text, playback is forced to normal speed (`1x`).
-- If your subtitle selector is not found, playback is forced to your configured fast speed.
+- If your subtitle selector is not found, playback is forced to your configured fast speed after a short grace window so brief subtitle gaps do not cause speed flapping.
 - If your selector matches elements but they are empty (or only whitespace), playback stays at your configured fast speed.
 - If matched subtitle text contains common musical symbols (`♪`, `♫`, `♬`, `♩`, `🎵`, `🎶`), playback is forced to fast speed.
 - Elements matching the subtitle selector (and their descendants) are forced to text-selection-friendly styles (`user-select: text`, pointer events enabled, text cursor), so subtitle text can be selected/copied more reliably.
@@ -124,7 +124,8 @@ Tip:
 - On startup, the script scans for duplicate subtitle selectors across profiles and can prompt to merge them into one profile.
 - Duplicate selector matching is escape-tolerant for common quote variants (for example `[data-testid=\"caption-container\"]` and `[data-testid=caption-container]` are treated as the same selector for duplicate detection).
 - Duplicate-profile merge target defaults to the active profile. If non-selector fields conflict, active profile values win and missing target fields may be filled from merged profiles.
-- Subtitle auto-speed presence checks are observer-driven (no tight polling timer): it uses shared DOM observer helpers when available, with a local `MutationObserver` fallback for compatibility.
+- Subtitle auto-speed presence checks are observer-driven and re-evaluate subtitle state immediately on DOM mutations, with a local `MutationObserver` fallback for compatibility.
+- Subtitle auto-speed also waits briefly before switching back to fast speed when captions disappear, which smooths tiny gaps between subtitle segments.
 - When `Pause on focus loss` is enabled, playback resumes automatically when the tab regains focus after an automatic pause.
 - While auto-speed is enabled, manual speed hotkeys (`z`, `x`, `c`) are ignored to avoid conflicts.
 - Disabling subtitle auto-speed immediately resets playback to `1x`.

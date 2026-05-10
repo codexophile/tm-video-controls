@@ -89,6 +89,7 @@
   let subtitleObserverUnsubscribe = null;
   let subtitleSelectorUserSelectStyleEl = null;
   let subtitleSelectorIframeCenterStyleEl = null;
+  let subtitleFastTransitionTimeoutId = null;
   let lastSubtitlePresentState = null;
   let timeTrackingStorageLoaded = false;
   let timeTrackingCurrentPageKey = '';
@@ -106,10 +107,11 @@
     typeof waitForEach === 'function' &&
     typeof CentralObserverManager !== 'undefined' &&
     typeof CentralObserverManager.observe === 'function';
+  const subtitleAbsentGraceMs = 180;
 
   const syncSubtitleAutoSpeedSoon = debounce(() => {
     syncSubtitleAutoSpeed();
-  }, 75);
+  }, 25);
   const autoSyncPushSoon = debounce(() => {
     runAutoSyncPush();
   }, 2500);
@@ -2371,6 +2373,55 @@
     }
   }
 
+  function clearSubtitleFastTransitionTimer() {
+    if (subtitleFastTransitionTimeoutId !== null) {
+      clearTimeout(subtitleFastTransitionTimeoutId);
+      subtitleFastTransitionTimeoutId = null;
+    }
+  }
+
+  function applySubtitleAutoSpeedState(video, subtitleState) {
+    if (!video || video !== activeVideo) return;
+
+    if (!subtitleState) {
+      setPlaybackRateIfNeeded(video, fastSpeed);
+      return;
+    }
+
+    if (subtitleState.present && subtitleState.hasMusicalSymbols) {
+      setPlaybackRateIfNeeded(video, fastSpeed);
+      return;
+    }
+
+    if (subtitleState.present) {
+      setPlaybackRateIfNeeded(video, 1);
+      return;
+    }
+
+    setPlaybackRateIfNeeded(video, fastSpeed);
+  }
+
+  function scheduleSubtitleFastTransition(video) {
+    if (subtitleFastTransitionTimeoutId !== null) return;
+
+    subtitleFastTransitionTimeoutId = window.setTimeout(() => {
+      subtitleFastTransitionTimeoutId = null;
+
+      if (!subtitleAutoSpeedEnabled || video !== activeVideo) return;
+      if (!subtitleSelector || !subtitleSelector.trim()) return;
+
+      const subtitleState = getSubtitleStateBySelector();
+      refreshSubtitleSelectorAvailabilityIndicator();
+
+      if (subtitleSelectorInvalid) {
+        setPlaybackRateIfNeeded(video, 1);
+        return;
+      }
+
+      applySubtitleAutoSpeedState(video, subtitleState);
+    }, subtitleAbsentGraceMs);
+  }
+
   function startSubtitlePresenceMonitoring() {
     stopSubtitlePresenceMonitoring();
 
@@ -2383,7 +2434,7 @@
       const observerControl = waitForEach(
         subtitleSelector,
         () => {
-          syncSubtitleAutoSpeedSoon();
+          syncSubtitleAutoSpeed();
         },
         { once: false },
       );
@@ -2395,12 +2446,12 @@
         observerControl.reload();
       }
 
-      syncSubtitleAutoSpeedSoon();
+      syncSubtitleAutoSpeed();
       return;
     }
 
     subtitleObserver = new MutationObserver(() => {
-      syncSubtitleAutoSpeedSoon();
+      syncSubtitleAutoSpeed();
     });
     subtitleObserver.observe(document.body, {
       childList: true,
@@ -2410,7 +2461,7 @@
       attributeFilter: ['class', 'style', 'hidden'],
     });
 
-    syncSubtitleAutoSpeedSoon();
+    syncSubtitleAutoSpeed();
   }
 
   function isVisibleSubtitleCandidate(element) {
@@ -2522,7 +2573,7 @@
       subtitleAutoSpeedEnabled ? 'true' : 'false',
     );
     subtitleSpeedTransitionToggleEl.title = subtitleAutoSpeedEnabled
-      ? 'Subtitle speed transition is ON (selector present = 1x, selector absent = fast). Click to disable.'
+      ? 'Subtitle speed transition is ON (selector present = 1x, brief gaps are smoothed before switching to fast). Click to disable.'
       : 'Subtitle speed transition is OFF. Click to enable selector-driven speed transition.';
   }
 
@@ -2571,6 +2622,7 @@
       const selectorFromPrompt = promptForSubtitleSelector();
       if (!selectorFromPrompt) {
         subtitleAutoSpeedEnabled = false;
+        clearSubtitleFastTransitionTimer();
 
         if (cbSubtitleAutoSpeedEl) {
           cbSubtitleAutoSpeedEl.checked = false;
@@ -2597,6 +2649,7 @@
     }
 
     stopSubtitlePresenceMonitoring();
+    clearSubtitleFastTransitionTimer();
     setPlaybackRateIfNeeded(activeVideo, 1);
   }
 
@@ -2606,11 +2659,13 @@
     if (!subtitleAutoSpeedEnabled) {
       subtitleSelectorInvalid = false;
       lastSubtitlePresentState = null;
+      clearSubtitleFastTransitionTimer();
       refreshSubtitleSelectorAvailabilityIndicator();
       return;
     }
 
     if (!subtitleSelector || !subtitleSelector.trim()) {
+      clearSubtitleFastTransitionTimer();
       setPlaybackRateIfNeeded(video, 1);
       return;
     }
@@ -2619,23 +2674,26 @@
     refreshSubtitleSelectorAvailabilityIndicator();
 
     if (subtitleSelectorInvalid) {
+      clearSubtitleFastTransitionTimer();
       setPlaybackRateIfNeeded(video, 1);
       return;
     }
 
-    if (subtitleState.present && subtitleState.hasMusicalSymbols) {
-      setPlaybackRateIfNeeded(video, fastSpeed);
-      return;
-    }
+    if (subtitleState.present) {
+      clearSubtitleFastTransitionTimer();
+      lastSubtitlePresentState = true;
 
-    const subtitlePresent = subtitleState.present;
-    lastSubtitlePresentState = subtitlePresent;
-    if (subtitlePresent) {
+      if (subtitleState.hasMusicalSymbols) {
+        setPlaybackRateIfNeeded(video, fastSpeed);
+        return;
+      }
+
       setPlaybackRateIfNeeded(video, 1);
       return;
     }
 
-    setPlaybackRateIfNeeded(video, fastSpeed);
+    lastSubtitlePresentState = false;
+    scheduleSubtitleFastTransition(video);
   }
 
   async function addToolbar() {
