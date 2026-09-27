@@ -1,0 +1,15 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "checkJs": true,
+    "module": "ES2020",
+    "noImplicitAny": false
+  },
+  "include": [
+    "**/*.js",
+    "../[fun] jQuery.js",
+    "../[fun] storyboards.js",
+    "../[fun] vanilla - presets.js",
+    "../[fun] vanilla.js"
+  ]
+}
