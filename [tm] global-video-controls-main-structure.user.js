@@ -58,6 +58,7 @@ const htmlStructure = `
         <button class="important" id="rewind-btn">0️⃣</button>
         <button class="important" id="speedToggle" title="Toggle speed between 1x and fast speed">💨</button>
         <button class="important" id="subtitleSpeedTransitionToggle" title="Toggle subtitle speed transition">🚀</button>
+        <button class="important" id="panelAttachToggle" title="Attach control panel to a page element">📌</button>
         <input type="checkbox" title="Auto Pause on Blur" id="cbAutoPauseOnBlur">
         <button id="track-indicator-text" class="track-indicator" title="Text tracks">📝</button>
         <button id="track-indicator-audio" class="track-indicator" title="Audio tracks">🎵</button>
@@ -75,6 +76,9 @@ const htmlStructure = `
       </div>
       <div class="subtitle-auto-popup-row">
         <label>Subtitle selector: <input type="text" title="CSS selector for subtitle element." id="inputSubtitleSelector" placeholder="Subtitle selector (example: .ytp-caption-segment)"></label>
+      </div>
+      <div class="subtitle-auto-popup-row">
+        <label>Panel attach selector: <input type="text" title="CSS selector for the element that should contain the control panel." id="inputPanelAttachSelector" placeholder="Optional selector (example: .video-player)" autocomplete="off"></label>
       </div>
     </div>
 

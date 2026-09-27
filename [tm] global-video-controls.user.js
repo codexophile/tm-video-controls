@@ -1,3 +1,4 @@
+// @ts-nocheck
 (async function () {
   'use strict';
 
@@ -25,7 +26,9 @@
     trackIndicatorAudioEl,
     trackIndicatorVideoEl,
     inputSubtitleSelectorEl,
-    numAutoFastSpeedEl;
+    numAutoFastSpeedEl,
+    inputPanelAttachSelectorEl,
+    panelAttachToggleEl;
   let timeTrackingPopupEl,
     timeTrackingPlayingEl,
     timeTrackingWaitingEl,
@@ -39,6 +42,8 @@
   let panelUiState = 0;
   let panelUiLastNonHeadState = 0;
   let panelAutoHideEnabled = false;
+  let panelAttached = false;
+  let panelAttachSelector = '';
   let panelPosition = null;
   let autoPauseOnBlurEnabled = false;
   let autoPausedByFocusLoss = false;
@@ -980,6 +985,8 @@
     fastSpeed = await loadFastSpeedSetting(fastSpeed);
     panelAutoHideEnabled = await loadPanelAutoHideSetting();
     panelPosition = await loadPanelPositionSetting();
+    panelAttached = await loadPanelAttachedSetting();
+    panelAttachSelector = await loadPanelAttachSelectorSetting();
     applySubtitleSelectorTextSelectableStyle();
   }
 
@@ -989,6 +996,8 @@
     fastSpeed = await loadFastSpeedSetting(fastSpeed);
     panelAutoHideEnabled = await loadPanelAutoHideSetting();
     panelPosition = await loadPanelPositionSetting();
+    panelAttached = await loadPanelAttachedSetting();
+    panelAttachSelector = await loadPanelAttachSelectorSetting();
 
     applySubtitleSelectorTextSelectableStyle();
 
@@ -1007,11 +1016,17 @@
     if (inputSubtitleSelectorEl) {
       inputSubtitleSelectorEl.value = subtitleSelector;
     }
+    if (inputPanelAttachSelectorEl) {
+      inputPanelAttachSelectorEl.value = panelAttachSelector;
+    }
     if (numAutoFastSpeedEl) {
       numAutoFastSpeedEl.value = String(fastSpeed);
     }
     if (controlPanel) {
-      applyStoredPanelPosition(controlPanel);
+      applyPanelAttachment(controlPanel);
+      if (!controlPanel.classList.contains('control-panel-attached')) {
+        applyStoredPanelPosition(controlPanel);
+      }
       applyEffectivePanelUiState(controlPanel);
     }
 
@@ -1034,6 +1049,8 @@
       autoPauseOnBlur: false,
       autoSpeedSelector: '',
       autoSpeedFast: defaultFastSpeed,
+      panelAttached: false,
+      panelAttachSelector: '',
     };
   }
 
@@ -1111,6 +1128,14 @@
       normalized.autoSpeedFast = normalizeFastSpeedValue(
         source.autoSpeedFast,
         fallbackFastSpeed,
+      );
+    }
+    if (typeof source.panelAttached === 'boolean') {
+      normalized.panelAttached = source.panelAttached;
+    }
+    if (source.panelAttachSelector !== undefined) {
+      normalized.panelAttachSelector = sanitizeSelectorValue(
+        source.panelAttachSelector,
       );
     }
 
@@ -2213,6 +2238,77 @@
     savePanelPositionToProfile(position);
   }
 
+  async function loadPanelAttachedSetting() {
+    return loadBooleanSettingFromProfile('panelAttached', false);
+  }
+
+  function savePanelAttachedSetting(attached) {
+    saveBooleanSettingToProfile('panelAttached', attached);
+  }
+
+  async function loadPanelAttachSelectorSetting() {
+    return loadTextSettingFromProfile('panelAttachSelector', '');
+  }
+
+  function savePanelAttachSelectorSetting(selector) {
+    saveTextSettingToProfile('panelAttachSelector', selector);
+  }
+
+  function renderPanelAttachmentToggle() {
+    if (!panelAttachToggleEl) return;
+
+    const isAttached = controlPanel?.classList.contains(
+      'control-panel-attached',
+    );
+
+    panelAttachToggleEl.setAttribute(
+      'aria-pressed',
+      isAttached ? 'true' : 'false',
+    );
+    panelAttachToggleEl.title = isAttached
+      ? 'Attached mode is ON. Click to return to floating mode.'
+      : 'Floating mode is ON. Click to attach the control panel to the configured element.';
+  }
+
+  function applyPanelAttachment(controlPanelEl) {
+    if (!controlPanelEl) return false;
+
+    let attachmentTarget = null;
+    if (panelAttached && panelAttachSelector) {
+      try {
+        attachmentTarget = document.querySelector(panelAttachSelector);
+      } catch (error) {
+        attachmentTarget = null;
+      }
+    }
+
+    const canAttach =
+      !!attachmentTarget &&
+      attachmentTarget !== controlPanelEl &&
+      !controlPanelEl.contains(attachmentTarget);
+
+    if (canAttach) {
+      attachmentTarget.append(controlPanelEl);
+      controlPanelEl.classList.add('control-panel-attached');
+      controlPanelEl.style.position = 'static';
+      controlPanelEl.style.top = '';
+      controlPanelEl.style.left = '';
+      controlPanelEl.style.transition = 'opacity 0.2s';
+      controlPanelEl.dataset.panelAttached = 'true';
+    } else {
+      if (controlPanelEl.parentElement !== document.body) {
+        document.body.append(controlPanelEl);
+      }
+      controlPanelEl.classList.remove('control-panel-attached');
+      controlPanelEl.style.position = 'fixed';
+      controlPanelEl.style.transition = 'left 0.5s, top 0.5s, opacity 0.2s';
+      controlPanelEl.dataset.panelAttached = 'false';
+    }
+
+    renderPanelAttachmentToggle();
+    return canAttach;
+  }
+
   function clampPanelPosition(controlPanelEl, position) {
     if (!controlPanelEl || !position) return null;
 
@@ -2565,9 +2661,10 @@
         ? speedTransitionDisabled
         : subtitleTransitionDisabledSvgFallback;
 
-    subtitleSpeedTransitionToggleEl.innerHTML = subtitleAutoSpeedEnabled
-      ? enabledSvg
-      : disabledSvg;
+    setInnerHTML(
+      subtitleSpeedTransitionToggleEl,
+      subtitleAutoSpeedEnabled ? enabledSvg : disabledSvg,
+    );
     subtitleSpeedTransitionToggleEl.setAttribute(
       'aria-pressed',
       subtitleAutoSpeedEnabled ? 'true' : 'false',
@@ -2734,11 +2831,22 @@
     if (inputSubtitleSelectorEl) {
       inputSubtitleSelectorEl.value = subtitleSelector;
     }
+    inputPanelAttachSelectorEl = controlPanel.querySelector(
+      '#inputPanelAttachSelector',
+    );
+    panelAttachToggleEl = controlPanel.querySelector('#panelAttachToggle');
+    if (inputPanelAttachSelectorEl) {
+      inputPanelAttachSelectorEl.value = panelAttachSelector;
+    }
+    renderPanelAttachmentToggle();
     refreshSubtitleSelectorAvailabilityIndicator();
     if (numAutoFastSpeedEl) {
       numAutoFastSpeedEl.value = String(fastSpeed);
     }
-    applyStoredPanelPosition(controlPanel);
+    applyPanelAttachment(controlPanel);
+    if (!controlPanel.classList.contains('control-panel-attached')) {
+      applyStoredPanelPosition(controlPanel);
+    }
     applyEffectivePanelUiState(controlPanel);
     vidProgressEl = controlPanel.querySelector(`#progress`);
     speedDispEl = controlPanel.querySelector('#speedDisp');
@@ -2771,9 +2879,12 @@
     );
 
     // dragElement( controlPanel, controlPanel );
-    makeDraggable(controlPanel);
+    if (!controlPanel.classList.contains('control-panel-attached')) {
+      makeDraggable(controlPanel);
+    }
     let panelDragStarted = false;
     contPanelHeader.addEventListener('mousedown', () => {
+      if (controlPanel.classList.contains('control-panel-attached')) return;
       panelDragStarted = true;
       controlPanel.style.transition = 'unset';
     });
@@ -2783,6 +2894,7 @@
     window.addEventListener('mouseup', () => {
       if (!panelDragStarted) return;
       panelDragStarted = false;
+      if (controlPanel.classList.contains('control-panel-attached')) return;
       persistControlPanelPosition(controlPanel);
     });
     controlPanel.addEventListener('mouseenter', () => {
@@ -2808,6 +2920,39 @@
       savePanelAutoHideSetting(panelAutoHideEnabled);
       applyEffectivePanelUiState(controlPanel);
     });
+    if (panelAttachToggleEl) {
+      panelAttachToggleEl.addEventListener('click', () => {
+        if (panelAttached) {
+          panelAttached = false;
+          savePanelAttachedSetting(false);
+          applyPanelAttachment(controlPanel);
+          makeDraggable(controlPanel);
+          applyStoredPanelPosition(controlPanel);
+          return;
+        }
+
+        if (!(panelAttachSelector || '').trim()) {
+          const popup = controlPanel.querySelector('#subtitleAutoPopup');
+          if (popup) {
+            popup.style.position = 'absolute';
+            popup.style.left = '0px';
+            popup.style.top = `${panelAttachToggleEl.offsetTop + panelAttachToggleEl.offsetHeight + 8}px`;
+            popup.removeAttribute('hidden');
+            popup.setAttribute('aria-hidden', 'false');
+          }
+          inputPanelAttachSelectorEl?.focus();
+          return;
+        }
+
+        panelAttached = true;
+        if (!applyPanelAttachment(controlPanel)) {
+          panelAttached = false;
+          window.alert('No page element matched the panel attach selector.');
+          return;
+        }
+        savePanelAttachedSetting(true);
+      });
+    }
     if (cbAutoPauseOnBlurEl) {
       cbAutoPauseOnBlurEl.addEventListener('change', event => {
         autoPauseOnBlurEnabled = event.target.checked;
@@ -2856,7 +3001,8 @@
         if (!popup || popup.hasAttribute('hidden')) return;
         if (
           !popup.contains(ev.target) &&
-          ev.target !== subtitleSpeedTransitionToggleEl
+          ev.target !== subtitleSpeedTransitionToggleEl &&
+          ev.target !== panelAttachToggleEl
         ) {
           popup.setAttribute('hidden', '');
           popup.setAttribute('aria-hidden', 'true');
@@ -2934,6 +3080,25 @@
       inputSubtitleSelectorEl.addEventListener('keyup', event => {
         if (event.key === 'Enter') {
           applySelector(event.target.value);
+        }
+      });
+    }
+
+    if (inputPanelAttachSelectorEl) {
+      const applyPanelSelector = value => {
+        panelAttachSelector = (value || '').trim();
+        savePanelAttachSelectorSetting(panelAttachSelector);
+        if (panelAttached) {
+          applyPanelAttachment(controlPanel);
+        }
+      };
+
+      inputPanelAttachSelectorEl.addEventListener('change', event => {
+        applyPanelSelector(event.target.value);
+      });
+      inputPanelAttachSelectorEl.addEventListener('keyup', event => {
+        if (event.key === 'Enter') {
+          applyPanelSelector(event.target.value);
         }
       });
     }
