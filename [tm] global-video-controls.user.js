@@ -38,12 +38,14 @@
     timeTrackingCurrentPositionEl,
     timeTrackingHeaderRowEl,
     spanTimeSavedSoFarEl,
+    cbTimeTrackingEl,
     timeTrackingStorageUrlEl;
   let panelUiState = 0;
   let panelUiLastNonHeadState = 0;
   let panelAutoHideEnabled = false;
   let panelAttached = false;
   let panelAttachSelector = '';
+  let panelAttachWaitToken = 0;
   let panelPosition = null;
   let autoPauseOnBlurEnabled = false;
   let autoPausedByFocusLoss = false;
@@ -88,6 +90,7 @@
   let syncStorageListenerRegistered = false;
 
   let subtitleAutoSpeedEnabled = false;
+  let timeTrackingEnabled = false;
   let subtitleSelector = '';
   let subtitleSelectorInvalid = false;
   let subtitleObserver = null;
@@ -157,6 +160,8 @@
   }
 
   function handleTimeTrackingTopUrlMessage(event) {
+    if (!timeTrackingEnabled) return;
+
     const payload = event?.data;
     if (!payload || typeof payload !== 'object') return;
     if (payload.channel !== timeTrackingTopUrlBridgeChannel) return;
@@ -208,6 +213,8 @@
   }
 
   function requestTimeTrackingParentTabUrl(force = false) {
+    if (!timeTrackingEnabled) return;
+
     if (!isIframeContextForTimeTracking()) return;
 
     const now = Date.now();
@@ -261,6 +268,8 @@
   }
 
   async function initializeTimeTracking() {
+    if (!timeTrackingEnabled) return;
+
     installTimeTrackingTopUrlBridge();
     await ensureTimeTrackingParentTabUrl();
 
@@ -465,6 +474,7 @@
   }
 
   function applyTimeTrackingMediaEvent(mediaEl, eventName) {
+    if (!timeTrackingEnabled) return false;
     if (!mediaEl) return false;
 
     const currentState = trackedTimeMediaState.get(mediaEl) || {
@@ -606,13 +616,23 @@
   }
 
   function scheduleTimeTrackingPersist() {
-    if (!timeTrackingStorageLoaded || !hasModernGMStorage) return;
+    if (
+      !timeTrackingEnabled ||
+      !timeTrackingStorageLoaded ||
+      !hasModernGMStorage
+    )
+      return;
 
     timeTrackingPersistSoon();
   }
 
   async function persistTimeTrackingStore() {
-    if (!timeTrackingStorageLoaded || !hasModernGMStorage) return;
+    if (
+      !timeTrackingEnabled ||
+      !timeTrackingStorageLoaded ||
+      !hasModernGMStorage
+    )
+      return;
 
     flushTimeTrackingSegment();
     const payload = normalizeTimeTrackingStore(timeTrackingStatsByPage);
@@ -624,7 +644,7 @@
   }
 
   function reconcileTimeTrackingState() {
-    if (!timeTrackingStorageLoaded) return;
+    if (!timeTrackingEnabled || !timeTrackingStorageLoaded) return;
 
     const now = Date.now();
     const nextPageKey = getTimeTrackingPageKey();
@@ -802,6 +822,7 @@
   }
 
   function handleTimeTrackingBeforeUnload() {
+    if (!timeTrackingEnabled) return;
     if (!timeTrackingStorageLoaded) return;
 
     flushTimeTrackingSegment();
@@ -974,13 +995,16 @@
       syncSubtitleAutoSpeed(activeVideo);
     }
 
-    syncKnownTimeTrackingMediaElements();
-    reconcileTimeTrackingState();
+    if (timeTrackingEnabled) {
+      syncKnownTimeTrackingMediaElements();
+      reconcileTimeTrackingState();
+    }
   }
 
   async function hydrateStoredSettings() {
     await ensureSettingsConfigLoaded();
     autoPauseOnBlurEnabled = await loadAutoPauseOnBlurSetting();
+    timeTrackingEnabled = await loadTimeTrackingSetting();
     subtitleSelector = await loadSubtitleSelectorSetting();
     fastSpeed = await loadFastSpeedSetting(fastSpeed);
     panelAutoHideEnabled = await loadPanelAutoHideSetting();
@@ -992,6 +1016,12 @@
 
   async function reloadRuntimeSettingsFromProfile() {
     autoPauseOnBlurEnabled = await loadAutoPauseOnBlurSetting();
+    const nextTimeTrackingEnabled = await loadTimeTrackingSetting();
+    if (nextTimeTrackingEnabled !== timeTrackingEnabled) {
+      await setTimeTrackingEnabled(nextTimeTrackingEnabled);
+    } else {
+      timeTrackingEnabled = nextTimeTrackingEnabled;
+    }
     subtitleSelector = await loadSubtitleSelectorSetting();
     fastSpeed = await loadFastSpeedSetting(fastSpeed);
     panelAutoHideEnabled = await loadPanelAutoHideSetting();
@@ -1013,6 +1043,9 @@
     if (cbAutoHideEl) {
       cbAutoHideEl.checked = panelAutoHideEnabled;
     }
+    if (cbTimeTrackingEl) {
+      cbTimeTrackingEl.checked = timeTrackingEnabled;
+    }
     if (inputSubtitleSelectorEl) {
       inputSubtitleSelectorEl.value = subtitleSelector;
     }
@@ -1026,6 +1059,7 @@
       applyPanelAttachment(controlPanel);
       if (!controlPanel.classList.contains('control-panel-attached')) {
         applyStoredPanelPosition(controlPanel);
+        waitForPanelAttachTarget(controlPanel);
       }
       applyEffectivePanelUiState(controlPanel);
     }
@@ -2254,6 +2288,35 @@
     saveTextSettingToProfile('panelAttachSelector', selector);
   }
 
+  async function loadTimeTrackingSetting() {
+    return loadBooleanSettingFromProfile('timeTrackingEnabled', false);
+  }
+
+  function saveTimeTrackingSetting(enabled) {
+    saveBooleanSettingToProfile('timeTrackingEnabled', enabled);
+  }
+
+  async function setTimeTrackingEnabled(enabled) {
+    timeTrackingEnabled = !!enabled;
+    saveTimeTrackingSetting(timeTrackingEnabled);
+
+    if (!timeTrackingEnabled) {
+      stopTimeTrackingHeartbeat();
+      timeTrackingCurrentMode = 'idle';
+      timeTrackingCurrentModeStartedAt = 0;
+      timeTrackingStorageLoaded = false;
+      timeTrackingStatsByPage = {};
+      trackedTimeMediaElements.clear();
+      refreshTimeTrackingPopup();
+      return;
+    }
+
+    await initializeTimeTracking();
+    syncKnownTimeTrackingMediaElements();
+    reconcileTimeTrackingState();
+    refreshTimeTrackingPopup();
+  }
+
   function renderPanelAttachmentToggle() {
     if (!panelAttachToggleEl) return;
 
@@ -2272,6 +2335,8 @@
 
   function applyPanelAttachment(controlPanelEl) {
     if (!controlPanelEl) return false;
+
+    panelAttachWaitToken += 1;
 
     let attachmentTarget = null;
     if (panelAttached && panelAttachSelector) {
@@ -2307,6 +2372,36 @@
 
     renderPanelAttachmentToggle();
     return canAttach;
+  }
+
+  function waitForPanelAttachTarget(controlPanelEl) {
+    const selector = (panelAttachSelector || '').trim();
+    if (!controlPanelEl || !panelAttached || !selector) return;
+
+    let existingTarget = null;
+    try {
+      existingTarget = document.querySelector(selector);
+    } catch (error) {
+      return;
+    }
+
+    if (existingTarget) return;
+
+    const waitToken = ++panelAttachWaitToken;
+    waitFor(selector)
+      .then(() => {
+        if (
+          waitToken !== panelAttachWaitToken ||
+          !panelAttached ||
+          panelAttachSelector !== selector ||
+          controlPanel !== controlPanelEl
+        ) {
+          return;
+        }
+
+        applyPanelAttachment(controlPanelEl);
+      })
+      .catch(() => {});
   }
 
   function clampPanelPosition(controlPanelEl, position) {
@@ -2846,6 +2941,7 @@
     applyPanelAttachment(controlPanel);
     if (!controlPanel.classList.contains('control-panel-attached')) {
       applyStoredPanelPosition(controlPanel);
+      waitForPanelAttachTarget(controlPanel);
     }
     applyEffectivePanelUiState(controlPanel);
     vidProgressEl = controlPanel.querySelector(`#progress`);
@@ -2874,6 +2970,13 @@
       '#time-spent-current-position',
     );
     spanTimeSavedSoFarEl = controlPanel.querySelector('#spanTimeSavedSoFar');
+    cbTimeTrackingEl = controlPanel.querySelector('#cbTimeTracking');
+    if (cbTimeTrackingEl) {
+      cbTimeTrackingEl.checked = timeTrackingEnabled;
+      cbTimeTrackingEl.addEventListener('change', event => {
+        setTimeTrackingEnabled(event.target.checked);
+      });
+    }
     timeTrackingStorageUrlEl = controlPanel.querySelector(
       '#time-spent-storage-url',
     );
@@ -2945,12 +3048,9 @@
         }
 
         panelAttached = true;
-        if (!applyPanelAttachment(controlPanel)) {
-          panelAttached = false;
-          window.alert('No page element matched the panel attach selector.');
-          return;
-        }
+        applyPanelAttachment(controlPanel);
         savePanelAttachedSetting(true);
+        waitForPanelAttachTarget(controlPanel);
       });
     }
     if (cbAutoPauseOnBlurEl) {
@@ -3090,6 +3190,7 @@
         savePanelAttachSelectorSetting(panelAttachSelector);
         if (panelAttached) {
           applyPanelAttachment(controlPanel);
+          waitForPanelAttachTarget(controlPanel);
         }
       };
 
@@ -3127,14 +3228,20 @@
       activeVideo.currentTime = (e.target.value / 100) * activeVideo.duration;
     });
     slidVolFinEl.addEventListener('input', e => {
-      activeVideo.volume = parseFloat(
-        parseFloat(e.target.value),
-      ); /* ; volumeDisplay.value = this.value */
+      const newValue = parseFloat(e.target.value);
+      if (newValue > 0) {
+        activeVideo.muted = false;
+      }
+      activeVideo.volume = parseFloat(newValue);
     });
     if (slidVolExtEl) {
       slidVolExtEl.addEventListener('input', e => {
         if (!activeVideo) return;
-        activeVideo.volume = parseFloat(e.target.value);
+        const newValue = parseFloat(e.target.value);
+        if (newValue > 0) {
+          activeVideo.muted = false;
+        }
+        activeVideo.volume = parseFloat(newValue);
       });
     }
 

@@ -38,9 +38,9 @@ This approach is site-agnostic and works even when native media text tracks are 
 9. Use the two volume sliders to control playback volume: the main slider controls `0` to `0.25`; the extended slider controls `0.25` to `1`.
 10. Use `📷` to download a PNG snapshot, or `📋` to copy the current frame image to your clipboard.
 11. The header now also shows compact fixed-width media-state badges next to the cycle button for player, ready, network, and error status; hover each badge to see the full code mapping.
-12. Click the `Time progress` row in the header to open a small summary popup that shows real time spent playing, time spent waiting, total tracked time, the current video duration, and a waste/save comparison.
+12. Click the `Time progress` row in the header to open a small summary popup. Playtime tracking and storage are disabled by default; enable `Enable playtime tracking` in this popup when you want the summary and per-page playtime data saved.
 13. Click `📌` to attach the panel. If no selector is configured, it opens the settings popup and focuses `Panel attach selector`; enter a page-element CSS selector, then click `📌` again. You can also open the popup by right-clicking the `🚀` button.
-14. Attached mode keeps the panel in the page layout and disables dragging, which helps keep it away from important content. If the selector is invalid or matches nothing, the panel stays floating.
+14. Attached mode keeps the panel in the page layout and disables dragging, which helps keep it away from important content. If the selector matches nothing yet, the panel stays floating until `waitFor` detects the target element; invalid selectors remain floating.
 15. Floating popups that should survive panel view changes now use the shared `control-popup` class, so new popups can stay visible without adding more UI-state exceptions.
 
 ## Sync Config Across Devices (GitHub Gist)
@@ -121,6 +121,7 @@ Tip:
 - On first run, the script seeds a default config object. If no rule matches the current hostname, the first setting write auto-creates an exact-host rule and profile (for example `auto:example.com`).
 - Wildcard rule patterns are supported (for example `vidrock.*` and `*.vidsrc.*`) so TLD/domain changes can keep using the same profile.
 - Setting changes are persisted immediately to the active profile when they are meant to survive reloads (for example panel drag position, subtitle selector edits, auto-hide toggle, and fast speed value).
+- Playtime tracking is controlled by the per-profile `timeTrackingEnabled` setting and defaults to `false`. When disabled, the script does not read, collect, or write playtime data.
 - Panel attachment mode and its CSS selector are persisted in the active profile and included in the canonical gist sync payload.
 - Panel drag position is stored per context: top-level pages use `panelPosition`, and iframe runs use `panelPositionIframe` with a fallback to the top-level position when no iframe-specific value exists yet.
 - Subtitle auto-speed enabled is session-only now; it resets on reload and is not written into profile storage.

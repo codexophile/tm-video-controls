@@ -25,6 +25,9 @@ const htmlStructure = `
       <div id="time-related-popup" class="time-related-popup" hidden aria-live="polite">
         <div class="time-related-popup-title">Video time summary</div>
         <div class="time-related-popup-row">
+          <label><input type="checkbox" title="Enable playtime tracking and storage" id="cbTimeTracking"> Enable playtime tracking</label>
+        </div>
+        <div class="time-related-popup-row">
           <div class="time-related-popup-label">Time spent playing</div>
           <div id="time-spent-playing" class="time-related-popup-value">0:00</div>
         </div>
